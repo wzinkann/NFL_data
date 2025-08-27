@@ -173,7 +173,8 @@ class Tank01Client:
                         "status": game.get("gameStatus", "Scheduled").lower(),
                         "game_date": game.get("gameDate", ""),
                         "espn_id": game.get("espnID", ""),
-                        "neutral_site": game.get("neutralSite", "False") == "True"
+                        "neutral_site": game.get("neutralSite", "False") == "True",
+                        "venue": self._get_venue_name(home_team, game.get("neutralSite", "False") == "True")
                     }
                     games.append(game_info)
                 except Exception as e:
@@ -276,6 +277,49 @@ class Tank01Client:
             "WSH": "Washington Commanders"
         }
         return team_names.get(abbreviation, abbreviation)
+    
+    def _get_venue_name(self, home_team: str, neutral_site: bool) -> str:
+        """Get venue name for a game"""
+        if neutral_site:
+            return "Neutral Site"
+        
+        # Map team abbreviations to their home stadiums
+        stadiums = {
+            "ARI": "State Farm Stadium",
+            "ATL": "Mercedes-Benz Stadium", 
+            "BAL": "M&T Bank Stadium",
+            "BUF": "Highmark Stadium",
+            "CAR": "Bank of America Stadium",
+            "CHI": "Soldier Field",
+            "CIN": "Paycor Stadium",
+            "CLE": "Cleveland Browns Stadium",
+            "DAL": "AT&T Stadium",
+            "DEN": "Empower Field at Mile High",
+            "DET": "Ford Field",
+            "GB": "Lambeau Field",
+            "HOU": "NRG Stadium",
+            "IND": "Lucas Oil Stadium",
+            "JAX": "EverBank Stadium",
+            "KC": "Arrowhead Stadium",
+            "LAC": "SoFi Stadium",
+            "LAR": "SoFi Stadium",
+            "LV": "Allegiant Stadium",
+            "MIA": "Hard Rock Stadium",
+            "MIN": "U.S. Bank Stadium",
+            "NE": "Gillette Stadium",
+            "NO": "Caesars Superdome",
+            "NYG": "MetLife Stadium",
+            "NYJ": "MetLife Stadium",
+            "PHI": "Lincoln Financial Field",
+            "PIT": "Acrisure Stadium",
+            "SEA": "Lumen Field",
+            "SF": "Levi's Stadium",
+            "TB": "Raymond James Stadium",
+            "TEN": "Nissan Stadium",
+            "WSH": "FedExField"
+        }
+        
+        return stadiums.get(home_team, "Unknown Stadium")
     
     def _format_game_time(self, time_str: str, date_str: str) -> str:
         """Format game time from Tank01 API format to ISO format"""

@@ -38,11 +38,16 @@ class Game(BaseModel):
     game_id: str
     home_team: str
     away_team: str
+    away_abbreviation: str
+    home_abbreviation: str
     game_time: str
     week: int
     season: int
     status: Optional[str] = "scheduled"
     venue: Optional[str] = "Unknown"
+    game_date: Optional[str] = ""
+    espn_id: Optional[str] = ""
+    neutral_site: Optional[bool] = False
 
 class TeamStats(BaseModel):
     team: str
