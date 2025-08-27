@@ -92,6 +92,18 @@ class Tank01Client:
         logger.warning(f"No games data available for week {week}, season {season}")
         return []
     
+    def get_current_week_games(self) -> List[Dict]:
+        """Get all games for the current week"""
+        # For now, default to week 1 of 2025 season since it's preseason
+        # In a real app, you'd calculate the current NFL week based on date
+        return self.get_games_for_week(1, 2025, "reg")
+    
+    def get_available_weeks(self, season: int = 2025) -> List[int]:
+        """Get list of available weeks for a season"""
+        # NFL regular season is typically weeks 1-18
+        # You could also query the Tank01 API to see what weeks have data
+        return list(range(1, 19))
+    
     def get_betting_odds(self, game_id: str) -> Dict:
         """Get betting odds for a specific game"""
         cache_key = f"betting_odds_{game_id}"

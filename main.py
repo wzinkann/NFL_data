@@ -71,13 +71,14 @@ async def root():
     return {
         "message": "NFL Data API",
         "version": "1.0.0",
-        "endpoints": {
-                    "get_games_for_week": "/games/week/{week}",
-        "get_current_week_games": "/games/current-week",
-        "get_betting_odds": "/odds/{game_id}",
-        "cache_info": "/cache/info",
-        "clear_cache": "/cache/clear",
-        "health": "/health"
+                "endpoints": {
+            "get_games_for_week": "/games/week/{week}",
+            "get_current_week_games": "/games/current-week",
+            "get_available_weeks": "/games/available-weeks",
+            "get_betting_odds": "/odds/{game_id}",
+            "cache_info": "/cache/info",
+            "clear_cache": "/cache/clear",
+            "health": "/health"
         },
         "config": {
             "tank01_api_configured": bool(config.TANK01_API_KEY),
@@ -102,11 +103,31 @@ async def health_check():
 async def get_games_for_week(week: int, season: int = 2025, season_type: str = "reg"):
     """Get all games for a specific week"""
     try:
+        # Validate week number (NFL regular season is weeks 1-18)
+        if week < 1 or week > 18:
+            raise HTTPException(status_code=400, detail="Week must be between 1 and 18")
+        
         games = tank01_client.get_games_for_week(week, season, season_type)
         return [Game(**game) for game in games]
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting games for week {week}: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch games")
+
+@app.get("/games/available-weeks")
+async def get_available_weeks(season: int = 2025):
+    """Get list of available weeks for a season"""
+    try:
+        weeks = tank01_client.get_available_weeks(season)
+        return {
+            "season": season,
+            "available_weeks": weeks,
+            "note": "NFL regular season typically runs weeks 1-18"
+        }
+    except Exception as e:
+        logger.error(f"Error getting available weeks: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch available weeks")
 
 @app.get("/games/current-week", response_model=List[Game])
 async def get_current_week_games():
