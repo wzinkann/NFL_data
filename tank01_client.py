@@ -25,7 +25,7 @@ class Tank01Client:
         
         # Cache for API responses
         self.cache = {}
-        self.cache_ttl = 300  # 5 minutes
+        self.cache_ttl = 86400  # 24 hours (1 day) - NFL data doesn't change frequently
     
     def _rate_limit(self):
         """Implement basic rate limiting"""
