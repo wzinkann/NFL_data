@@ -20,27 +20,27 @@ def test_endpoint(endpoint, method="GET", data=None):
         elif method == "POST":
             response = requests.post(url, json=data, timeout=10)
         else:
-            print(f"❌ Unsupported method: {method}")
+            print(f"--- Unsupported method: {method}")
             return False
         
         if response.status_code == 200:
-            print(f"✅ {method} {endpoint} - Success")
+            print(f"--- {method} {endpoint} - Success")
             return response.json()
         else:
-            print(f"❌ {method} {endpoint} - Status: {response.status_code}")
+            print(f"--- {method} {endpoint} - Status: {response.status_code}")
             print(f"   Response: {response.text}")
             return False
             
     except requests.exceptions.ConnectionError:
-        print(f"❌ {method} {endpoint} - Connection failed. Is the API running?")
+        print(f"--- {method} {endpoint} - Connection failed. Is the API running?")
         return False
     except Exception as e:
-        print(f"❌ {method} {endpoint} - Error: {e}")
+        print(f"--- {method} {endpoint} - Error: {e}")
         return False
 
 def main():
     """Run all tests"""
-    print("🏈 NFL Game Outcome Prediction API - Test Suite")
+    print("--- NFL Game Outcome Prediction API - Test Suite")
     print("=" * 60)
     
     # Wait a moment for API to be ready
@@ -111,46 +111,46 @@ def main():
     # Standings
     standings_data = test_endpoint("/standings")
     if standings_data:
-        print("   ✅ Standings endpoint working")
+        print("   --- Standings endpoint working")
     
     # Team stats
     if games_data:
         team_name = games_data[0]['home_team']
         team_stats = test_endpoint(f"/teams/{team_name}/stats")
         if team_stats:
-            print(f"   ✅ Team stats endpoint working for {team_name}")
+            print(f"   --- Team stats endpoint working for {team_name}")
     
     # Cache info
     cache_data = test_endpoint("/cache/info")
     if cache_data:
-        print(f"   ✅ Cache endpoint working - {cache_data['total_items']} cached items")
+        print(f"   --- Cache endpoint working - {cache_data['total_items']} cached items")
     
     # Test cache clear
     clear_result = test_endpoint("/cache/clear", method="POST")
     if clear_result:
-        print("   ✅ Cache clear endpoint working")
+        print("   --- Cache clear endpoint working")
     
     # Final summary
     print("\n" + "=" * 60)
-    print("🎯 Test Summary")
+    print("--- Test Summary")
     print("=" * 60)
     
     if root_data and health_data and games_data and predictions_data:
-        print("✅ All core endpoints are working!")
-        print("✅ API is ready for use")
-        print("\n📚 Next steps:")
+        print("--- All core endpoints are working!")
+        print("--- API is ready for use")
+        print("\n--- Next steps:")
         print("   - Visit http://localhost:8000/docs for interactive API documentation")
         print("   - Use the endpoints to get game outcome predictions")
         print("   - Customize the prediction algorithm in prediction_engine.py")
         print("   - Add your Tank01 API key to .env for real data")
-        print("\n🎲 Prediction Features:")
+        print("\n--- Prediction Features:")
         print("   - Game scores and spreads")
         print("   - Over/under totals")
         print("   - Win probabilities")
         print("   - Game type classification")
         print("   - Key factors analysis")
     else:
-        print("❌ Some endpoints failed. Check the API logs for errors.")
+        print("--- Some endpoints failed. Check the API logs for errors.")
         print("\n🔧 Troubleshooting:")
         print("   - Ensure the API is running (python main.py)")
         print("   - Check for error messages in the terminal")
