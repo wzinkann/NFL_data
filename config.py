@@ -5,25 +5,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    """Configuration class for the NFL Prediction API"""
+    """Configuration class for the NFL Data API"""
     
     # Tank01 API Configuration (via RapidAPI)
     TANK01_API_KEY = os.getenv("TANK01_API_KEY")  # This should be your RapidAPI key
     TANK01_BASE_URL = os.getenv("TANK01_BASE_URL", "https://tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com")
+    
+    # API Key Authentication
+    API_SECRET_KEY = os.getenv("API_SECRET_KEY", "default_secret_key_change_in_production")
+    API_KEY_HEADER = "X-API-Key"
     
     # API Configuration
     API_HOST = os.getenv("API_HOST", "0.0.0.0")
     API_PORT = int(os.getenv("API_PORT", "8000"))
     DEBUG = os.getenv("DEBUG", "False").lower() == "true"
     
-    # Prediction Model Configuration
-    MODEL_CONFIDENCE_THRESHOLD = float(os.getenv("MODEL_CONFIDENCE_THRESHOLD", "0.6"))
-    
     # Tank01 RapidAPI Endpoints
     TANK01_ENDPOINTS = {
         "nfl_games_for_week": "/getNFLGamesForWeek",
-        "nfl_teams": "/getNFLTeams",
-        "nfl_standings": "/getNFLStandings"
+        "nfl_betting_odds": "/getNFLBettingOdds"
     }
     
     # NFL Season Configuration
@@ -58,5 +58,5 @@ class Config:
                 "User-Agent": "NFL-Prediction-API/1.0"
             }
         return {
-            "User-Agent": "NFL-Prediction-API/1.0"
+            "User-Agent": "NFL-Data-API/1.0"
         }

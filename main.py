@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import os
@@ -32,6 +33,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# API Key Authentication
+security = HTTPBearer()
+
+async def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Verify the API key from the Authorization header"""
+    if credentials.credentials != config.API_SECRET_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return credentials.credentials
 
 # Pydantic models
 class Game(BaseModel):
@@ -87,26 +101,37 @@ async def root():
         },
         "config": {
             "tank01_api_configured": bool(config.TANK01_API_KEY),
-            "using_mock_data": not bool(config.TANK01_API_KEY)
+            "using_mock_data": not bool(config.TANK01_API_KEY),
+            "authentication_required": True
         },
         "data_sources": {
             "games": "Real-time NFL game schedules from Tank01 API",
             "betting_odds": "Live betting odds from multiple sportsbooks via Tank01 API"
+        },
+        "authentication": {
+            "type": "Bearer Token",
+            "header": "Authorization: Bearer YOUR_API_KEY"
         }
     }
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint - no authentication required"""
     return {
         "status": "healthy", 
         "timestamp": datetime.now().isoformat(),
-        "tank01_api_status": "connected" if config.TANK01_API_KEY else "using_mock_data"
+        "tank01_api_status": "connected" if config.TANK01_API_KEY else "using_mock_data",
+        "authentication_enabled": True
     }
 
 @app.get("/games/week/{week}", response_model=List[Game])
-async def get_games_for_week(week: int, season: int = 2025, season_type: str = "reg"):
-    """Get all games for a specific week"""
+async def get_games_for_week(
+    week: int, 
+    season: int = 2025, 
+    season_type: str = "reg",
+    api_key: str = Depends(verify_api_key)
+):
+    """Get all games for a specific week - requires API key"""
     try:
         # Validate week number (NFL regular season is weeks 1-18)
         if week < 1 or week > 18:
@@ -121,8 +146,11 @@ async def get_games_for_week(week: int, season: int = 2025, season_type: str = "
         raise HTTPException(status_code=500, detail="Failed to fetch games")
 
 @app.get("/games/available-weeks")
-async def get_available_weeks(season: int = 2025):
-    """Get list of available weeks for a season"""
+async def get_available_weeks(
+    season: int = 2025,
+    api_key: str = Depends(verify_api_key)
+):
+    """Get list of available weeks for a season - requires API key"""
     try:
         weeks = tank01_client.get_available_weeks(season)
         return {
@@ -135,8 +163,8 @@ async def get_available_weeks(season: int = 2025):
         raise HTTPException(status_code=500, detail="Failed to fetch available weeks")
 
 @app.get("/games/current-week", response_model=List[Game])
-async def get_current_week_games():
-    """Get all games for the current week (defaults to Week 1, 2025)"""
+async def get_current_week_games(api_key: str = Depends(verify_api_key)):
+    """Get all games for the current week - requires API key"""
     try:
         games = tank01_client.get_current_week_games()
         return [Game(**game) for game in games]
@@ -151,8 +179,11 @@ async def get_current_week_games():
 
 
 @app.get("/odds/{game_id}")
-async def get_betting_odds(game_id: str):
-    """Get betting odds for a specific game"""
+async def get_betting_odds(
+    game_id: str,
+    api_key: str = Depends(verify_api_key)
+):
+    """Get betting odds for a specific game - requires API key"""
     try:
         odds = tank01_client.get_betting_odds(game_id)
         return {
@@ -164,8 +195,8 @@ async def get_betting_odds(game_id: str):
         raise HTTPException(status_code=500, detail="Failed to fetch betting odds")
 
 @app.get("/cache/info", response_model=CacheInfo)
-async def get_cache_info():
-    """Get information about cached data"""
+async def get_cache_info(api_key: str = Depends(verify_api_key)):
+    """Get information about cached data - requires API key"""
     try:
         cache_info = tank01_client.get_cache_info()
         return CacheInfo(**cache_info)
@@ -174,8 +205,8 @@ async def get_cache_info():
         raise HTTPException(status_code=500, detail="Failed to get cache info")
 
 @app.post("/cache/clear")
-async def clear_cache():
-    """Clear all cached data"""
+async def clear_cache(api_key: str = Depends(verify_api_key)):
+    """Clear all cached data - requires API key"""
     try:
         tank01_client.clear_cache()
         return {"message": "Cache cleared successfully"}
@@ -184,8 +215,8 @@ async def clear_cache():
         raise HTTPException(status_code=500, detail="Failed to clear cache")
 
 @app.get("/debug/config")
-async def debug_config():
-    """Debug endpoint to show current configuration (development only)"""
+async def debug_config(api_key: str = Depends(verify_api_key)):
+    """Debug endpoint to show current configuration - requires API key"""
     if not config.DEBUG:
         raise HTTPException(status_code=404, detail="Not found")
     
@@ -195,7 +226,7 @@ async def debug_config():
         "api_host": config.API_HOST,
         "api_port": config.API_PORT,
         "debug_mode": config.DEBUG,
-        "model_confidence_threshold": config.MODEL_CONFIDENCE_THRESHOLD
+        "api_secret_key_configured": bool(config.API_SECRET_KEY)
     }
 
 if __name__ == "__main__":
