@@ -229,6 +229,8 @@ async def debug_config(api_key: str = Depends(verify_api_key)):
         "api_secret_key_configured": bool(config.API_SECRET_KEY)
     }
 
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(

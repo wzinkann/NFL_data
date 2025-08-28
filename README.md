@@ -7,7 +7,7 @@ A clean, focused FastAPI application that provides real NFL data including game 
 - **Weekly Game Schedules**: Get all NFL games for any week (1-18)
 - **Live Betting Odds**: Real-time odds from multiple sportsbooks
 - **Team Information**: Full team names, abbreviations, and venue details
-- **Smart Caching**: 24-hour cache for optimal performance and API cost management
+- **Smart Caching**: Weekly cache (Tuesday to Tuesday) for optimal performance and API cost management
 - **Clean Data**: No mock data - only real NFL information
 - **Flexible Week Support**: Query any week of the NFL season
 
@@ -191,16 +191,19 @@ Complete stadium mapping for all 32 NFL teams:
 
 ### Cache Behavior
 
-- **Cache TTL**: 24 hours (1 day)
+- **Cache TTL**: Weekly (Tuesday to Tuesday)
 - **Cache Keys**: Unique per week and game ID
-- **Smart Refresh**: Data only refreshes when endpoints are called
+- **Smart Refresh**: Data automatically refreshes every Tuesday
 - **Cost Optimization**: Minimizes Tank01 API calls
+- **NFL Aligned**: Perfect for weekly schedule updates
 
 ### Cache Management
 
 - **View Cache Status**: `GET /cache/info`
 - **Clear All Cache**: `POST /cache/clear`
 - **Force Fresh Data**: Clear cache to get latest information
+- **Weekly Refresh**: Cache automatically expires every Tuesday
+- **Smart TTL**: Duration adjusts based on current day of week
 
 ## Configuration
 

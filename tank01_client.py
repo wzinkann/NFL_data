@@ -2,7 +2,7 @@ import requests
 import logging
 import time
 from typing import Dict, List, Optional, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,25 @@ class Tank01Client:
         
         # Cache for API responses
         self.cache = {}
-        self.cache_ttl = 86400  # 24 hours (1 day) - NFL data doesn't change frequently
+        self._update_weekly_cache_ttl()
+    
+    def _get_next_tuesday(self) -> datetime:
+        """Get the next Tuesday at 12:00 AM"""
+        today = datetime.now()
+        days_ahead = 1 - today.weekday()  # Tuesday is 1, Monday is 0
+        if days_ahead <= 0:  # Target day already happened this week
+            days_ahead += 7
+        next_tuesday = today + timedelta(days=days_ahead)
+        return next_tuesday.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    def _update_weekly_cache_ttl(self):
+        """Update cache TTL to expire on next Tuesday"""
+        next_tuesday = self._get_next_tuesday()
+        now = datetime.now()
+        seconds_until_tuesday = (next_tuesday - now).total_seconds()
+        self.cache_ttl = max(seconds_until_tuesday, 3600)  # Minimum 1 hour cache
+        logger.info(f"Cache TTL set to expire on {next_tuesday.strftime('%Y-%m-%d %H:%M')} ({self.cache_ttl:.0f} seconds)")
+        logger.info(f"Current cache duration: {self.cache_ttl/3600:.1f} hours")
     
     def _rate_limit(self):
         """Implement basic rate limiting"""
@@ -56,6 +74,7 @@ class Tank01Client:
         """Get cached data if still valid"""
         if key in self.cache:
             data, timestamp = self.cache[key]
+            
             if time.time() - timestamp < self.cache_ttl:
                 return data
             else:
@@ -359,11 +378,22 @@ class Tank01Client:
         self.cache.clear()
         logger.info("Cache cleared")
     
+    def refresh_cache_ttl(self):
+        """Manually refresh the cache TTL (useful for debugging)"""
+        old_ttl = self.cache_ttl
+        self._update_weekly_cache_ttl()
+        logger.info(f"Cache TTL refreshed: {old_ttl/3600:.1f}h -> {self.cache_ttl/3600:.1f}h")
+    
+
+    
     def get_cache_info(self) -> Dict:
         """Get information about cached data"""
+        next_tuesday = self._get_next_tuesday()
         cache_info = {
             "total_items": len(self.cache),
             "cache_ttl": self.cache_ttl,
+            "cache_ttl_hours": round(self.cache_ttl / 3600, 1),
+            "next_refresh": next_tuesday.strftime("%Y-%m-%d %H:%M"),
             "cached_keys": list(self.cache.keys())
         }
         return cache_info
