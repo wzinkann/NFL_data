@@ -208,6 +208,30 @@ class Tank01Client:
             logger.error(f"Raw response: {data}")
             return []
     
+    def _normalize_odds(self, odds_value: str) -> str:
+        """Normalize odds values - convert non-numeric odds to -100"""
+        if not odds_value or odds_value == "":
+            return ""
+        
+        # Convert to string and strip whitespace
+        odds_str = str(odds_value).strip()
+        
+        # Check if it's a non-numeric value that should be converted to -100
+        non_numeric_odds = ["even", "EVEN", "Even", "pk", "PK", "Pk", "push", "PUSH", "Push"]
+        
+        if odds_str in non_numeric_odds:
+            return "-100"
+        
+        # Check if it's already a valid number (including negative numbers)
+        try:
+            # Try to convert to float to validate it's a number
+            float(odds_str)
+            return odds_str
+        except ValueError:
+            # If it's not a valid number and not in our non-numeric list, default to -100
+            logger.warning(f"Unknown odds format '{odds_str}', defaulting to -100")
+            return "-100"
+
     def _parse_betting_odds_data(self, data: Dict, game_id: str) -> Dict:
         """Parse betting odds data from Tank01 API response"""
         try:
@@ -237,18 +261,18 @@ class Tank01Client:
                         "spread": {
                             "away": book_data.get("awayTeamSpread", ""),
                             "home": book_data.get("homeTeamSpread", ""),
-                            "away_odds": book_data.get("awayTeamSpreadOdds", ""),
-                            "home_odds": book_data.get("homeTeamSpreadOdds", "")
+                            "away_odds": self._normalize_odds(book_data.get("awayTeamSpreadOdds", "")),
+                            "home_odds": self._normalize_odds(book_data.get("homeTeamSpreadOdds", ""))
                         },
                         "total": {
                             "over": book_data.get("totalOver", ""),
                             "under": book_data.get("totalUnder", ""),
-                            "over_odds": book_data.get("totalOverOdds", ""),
-                            "under_odds": book_data.get("totalUnderOdds", "")
+                            "over_odds": self._normalize_odds(book_data.get("totalOverOdds", "")),
+                            "under_odds": self._normalize_odds(book_data.get("totalUnderOdds", ""))
                         },
                         "moneyline": {
-                            "away": book_data.get("awayTeamMLOdds", ""),
-                            "home": book_data.get("homeTeamMLOdds", "")
+                            "away": self._normalize_odds(book_data.get("awayTeamMLOdds", "")),
+                            "home": self._normalize_odds(book_data.get("homeTeamMLOdds", ""))
                         },
                         "implied_totals": book_data.get("impliedTotals", {})
                     }
