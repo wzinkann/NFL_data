@@ -30,9 +30,16 @@ class Tank01Client:
     def _get_next_tuesday(self) -> datetime:
         """Get the next Tuesday at 12:00 AM"""
         today = datetime.now()
+        
+        # If today is Tuesday, cache should expire at midnight tonight (this Tuesday)
+        if today.weekday() == 1:  # Tuesday is 1
+            return today.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        
+        # Otherwise, find the next Tuesday
         days_ahead = 1 - today.weekday()  # Tuesday is 1, Monday is 0
-        if days_ahead <= 0:  # Target day already happened this week
+        if days_ahead < 0:  # Target day already happened this week
             days_ahead += 7
+        
         next_tuesday = today + timedelta(days=days_ahead)
         return next_tuesday.replace(hour=0, minute=0, second=0, microsecond=0)
     
@@ -113,9 +120,34 @@ class Tank01Client:
     
     def get_current_week_games(self) -> List[Dict]:
         """Get all games for the current week"""
-        # For now, default to week 1 of 2025 season since it's preseason
-        # In a real app, you'd calculate the current NFL week based on date
-        return self.get_games_for_week(1, 2025, "reg")
+        current_week = self._calculate_current_nfl_week()
+        return self.get_games_for_week(current_week, 2025, "reg")
+    
+    def _calculate_current_nfl_week(self) -> int:
+        """Calculate the current NFL week based on the current date"""
+        # NFL 2025 season starts on September 4, 2025 (Thursday)
+        season_start = datetime(2025, 9, 4)
+        today = datetime.now()
+        
+        # If we're before the season starts, return week 1
+        if today < season_start:
+            return 1
+        
+        # Calculate days since season start
+        days_since_start = (today - season_start).days
+        
+        # NFL Week 1: Sept 4-8 (Thu-Mon) = 5 days
+        # NFL Week 2: Sept 9-15 (Tue-Mon) = 7 days  
+        # NFL Week 3: Sept 16-22 (Tue-Mon) = 7 days
+        # etc.
+        
+        if days_since_start <= 4:  # Sept 4-8 (Week 1)
+            return 1
+        else:
+            # After Week 1, each week is 7 days starting from Tuesday
+            # Week 2 starts on day 5 (Sept 9)
+            week = ((days_since_start - 5) // 7) + 2
+            return min(week, 18)
     
     def get_available_weeks(self, season: int = 2025) -> List[int]:
         """Get list of available weeks for a season"""
